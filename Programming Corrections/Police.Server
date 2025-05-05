@@ -1,0 +1,202 @@
+import datetime
+
+# Класс, представляющий одно событие в деле
+class Event:
+    def __init__(self, note, officer_name):
+        self.timestamp = datetime.datetime.now()
+        self.note = note
+        self.officer_name = officer_name
+
+    def __str__(self):
+        return f"Дата: {self.timestamp}, Полицейский: {self.officer_name}, Событие: {self.note}"
+
+# Класс, представляющий полицейское дело
+class Case:
+    def __init__(self, case_id, description):
+        self.case_id = case_id
+        self.description = description
+        self.status = "open"  # Статус может быть "open" или "closed"
+        self.events = []
+
+    def add_event(self, event):
+        self.events.append(event)
+
+    def close_case(self):
+        self.status = "closed"
+
+    def get_timeline(self):
+        return sorted(self.events, key=lambda x: x.timestamp)
+
+    def get_status(self):
+        return self.status
+
+    def get_description(self):
+        return self.description
+
+    def get_case_id(self):
+        return self.case_id
+
+# Класс, представляющий полицейского
+class PoliceOfficer:
+    def __init__(self, name, badge_number, rank):
+        self.name = name
+        self.badge_number = badge_number
+        self.rank = rank  # Добавлено звание
+        self.cases = []
+
+    def assign_case(self, case):
+        self.cases.append(case)
+
+    def get_case_by_id(self, case_id):
+        for case in self.cases:
+            if case.get_case_id() == case_id:
+                return case
+        return None
+
+    def get_summary(self):
+        open_cases = sum(1 for case in self.cases if case.get_status() == "open")
+        closed_cases = sum(1 for case in self.cases if case.get_status() == "closed")
+        return f"Открытых дел: {open_cases}, Закрытых дел: {closed_cases}"
+
+    def get_info(self):
+        return f"{self.rank} {self.name} (Удостоверение: {self.badge_number})"
+
+# Функция для отображения главного меню и взаимодействия с пользователем
+def main():
+    officers = []
+    cases = []
+
+    # Приоритет званий: чем меньше число, тем выше звание
+    rank_priority = {
+        "Генерал": 1,
+        "Полковник": 2,
+        "Подполковник": 3,
+        "Майор": 4,
+        "Капитан": 5,
+        "Лейтенант": 6,
+        "Сержант": 7,
+        "Рядовой": 8
+    }
+
+    while True:
+        print("\nМеню:")
+        print("1. Добавить полицейского")
+        print("2. Добавить дело")
+        print("3. Назначить дело полицейскому")
+        print("4. Добавить событие в дело")
+        print("5. Закрыть дело")
+        print("6. Получить сводку по полицейскому")
+        print("7. Просмотреть все дела")
+        print("8. Выход")
+        print("9. Просмотреть конкретное дело по ID")
+        print("10. Список всех оперативников по званию")
+
+        choice = input("Выберите действие: ")
+
+        if choice == "1":
+            name = input("Введите имя полицейского: ")
+            badge_number = input("Введите номер удостоверения: ")
+            rank = input("Введите звание (например, Капитан, Лейтенант): ")
+            officer = PoliceOfficer(name, badge_number, rank)
+            officers.append(officer)
+            print(f"{rank} {name} с номером удостоверения {badge_number} добавлен.")
+
+        elif choice == "2":
+            description = input("Введите описание дела: ")
+            case_id = len(cases) + 1
+            case = Case(case_id, description)
+            cases.append(case)
+            print(f"Дело {case_id} добавлено.")
+
+        elif choice == "3":
+            officer_name = input("Введите имя полицейского: ")
+            case_id = int(input("Введите ID дела: "))
+            officer = next((o for o in officers if o.name == officer_name), None)
+            case = next((c for c in cases if c.get_case_id() == case_id), None)
+
+            if officer and case:
+                officer.assign_case(case)
+                print(f"Дело {case_id} назначено полицейскому {officer_name}.")
+            else:
+                print("Полицейский или дело не найдены.")
+
+        elif choice == "4":
+            officer_name = input("Введите имя полицейского: ")
+            case_id = int(input("Введите ID дела: "))
+            note = input("Введите описание события: ")
+            officer = next((o for o in officers if o.name == officer_name), None)
+            case = next((c for c in cases if c.get_case_id() == case_id), None)
+
+            if officer and case:
+                event = Event(note, officer_name)
+                case.add_event(event)
+                print(f"Событие добавлено в дело {case_id}.")
+            else:
+                print("Полицейский или дело не найдены.")
+
+        elif choice == "5":
+            case_id = int(input("Введите ID дела для закрытия: "))
+            case = next((c for c in cases if c.get_case_id() == case_id), None)
+
+            if case:
+                case.close_case()
+                print(f"Дело {case_id} закрыто.")
+            else:
+                print("Дело не найдено.")
+
+        elif choice == "6":
+            officer_name = input("Введите имя полицейского: ")
+            officer = next((o for o in officers if o.name == officer_name), None)
+
+            if officer:
+                print(officer.get_summary())
+            else:
+                print("Полицейский не найден.")
+
+        elif choice == "7":
+            if not cases:
+                print("Дела отсутствуют.")
+            else:
+                print("\nСписок всех дел:")
+                for case in cases:
+                    print(f"Дело {case.get_case_id()} - Описание: {case.get_description()} - Статус: {case.get_status()}")
+                print("\nХронология по каждому делу:")
+                for case in cases:
+                    print(f"\nДело {case.get_case_id()} - Статус: {case.get_status()}")
+                    for event in case.get_timeline():
+                        print(event)
+                    print("--------")
+
+        elif choice == "8":
+            print("Выход из программы.")
+            break
+
+        elif choice == "9":
+            try:
+                case_id = int(input("Введите ID дела: "))
+                case = next((c for c in cases if c.get_case_id() == case_id), None)
+                if case:
+                    print(f"\nДело {case.get_case_id()} - Описание: {case.get_description()} - Статус: {case.get_status()}")
+                    print("Хронология событий:")
+                    for event in case.get_timeline():
+                        print(event)
+                    print("--------")
+                else:
+                    print("Дело не найдено.")
+            except ValueError:
+                print("Некорректный ввод. Введите числовой ID.")
+
+        elif choice == "10":
+            if not officers:
+                print("Список полицейских пуст.")
+            else:
+                print("\nОперативники по званию (от высшего к низшему):")
+                sorted_officers = sorted(officers, key=lambda o: rank_priority.get(o.rank, 999))
+                for officer in sorted_officers:
+                    print(officer.get_info())
+
+        else:
+            print("Неверный выбор, попробуйте снова.")
+
+if __name__ == "__main__":
+    main()
