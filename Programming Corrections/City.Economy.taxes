@@ -1,0 +1,136 @@
+class Country:
+    def __init__(self, name, population, budget, counties):
+        self.name = name  
+        self.population = population  
+        self.budget = budget  
+        self.counties = counties 
+
+    def add_county(self, county):
+        self.counties.append(county) 
+
+    def approve_funding(self, county, amount, city):
+        if county.get_budget() >= amount:
+            county.process_city_request(city, amount)  
+            print(f"Финансирование в размере {amount} утверждено для города {city.name} в области {county.name}")
+        else:
+            print("Недостаточно средств")
+
+    def collect_taxes(self):
+        total_taxes = sum(county.collect_taxes() for county in self.counties) 
+        self.budget += total_taxes 
+        print(f"Собрано налогов: {total_taxes}. Новый бюджет страны: {self.budget}")
+
+    def get_budget(self):
+        return self.budget  
+
+class County:
+    def __init__(self, name, population, budget, cities):
+        self.name = name  
+        self.population = population  
+        self.budget = budget  
+        self.cities = cities  
+
+    def add_city(self, city):
+        self.cities.append(city)  
+
+    def process_city_request(self, city, amount):
+        if self.budget >= amount:
+            city.receive_funding(amount) 
+            self.budget -= amount 
+            print(f"Выделено {amount} финансирования для города {city.name}")
+        else:
+            print(f"Недостаточно средств в области {self.name} для города {city.name}")
+
+    def request_government_support(self, amount, city):
+        return f"Запрос на {amount} для города {city.name} от правительства."
+
+    def collect_taxes(self):
+        total_taxes = sum(city.collect_taxes() for city in self.cities)  
+        self.budget += total_taxes  
+        return total_taxes
+
+    def get_budget(self):
+        return self.budget 
+
+class City:
+    def __init__(self, name, population, budget):
+        self.name = name
+        self.population = population  
+        self.budget = budget  
+        self.residents = []  
+
+    def request_funding(self, amount, county):
+        county.process_city_request(self, amount) 
+
+    def receive_funding(self, amount):
+        self.budget += amount 
+        print(f"{self.name} получил {amount} финансирования. Новый бюджет: {self.budget}")
+
+    def collect_taxes(self):
+        total_taxes = self.population * 100  
+        self.budget += total_taxes 
+        print(f"Собрано налогов в {self.name}: {total_taxes}. Новый бюджет города: {self.budget}")
+        return total_taxes
+
+    def add_resident(self, person):
+        if person not in self.residents:
+            self.residents.append(person) 
+            self.population += 1  
+            self.budget += 50  
+            print(f"{person.name} переехал в {self.name}. Население теперь: {self.population}")
+        else:
+            print(f"{person.name} уже проживает в {self.name}")
+
+    def remove_resident(self, person):
+        if person in self.residents:
+            self.residents.remove(person)  
+            self.population -= 1 
+            self.budget -= 50  
+            print(f"{person.name} покинул {self.name}. Население теперь: {self.population}")
+        else:
+            print(f"{person.name} не найден в {self.name}")
+
+    def get_info(self):
+        return f"Город: {self.name}, Население: {self.population}, Бюджет: {self.budget}"
+
+
+class Person:
+    def __init__(self, name, city):
+        self.name = name 
+        self.city = city  
+        city.add_resident(self)  
+
+    def pay_taxes(self):
+        self.city.collect_taxes()  
+
+    def move_to_city(self, new_city):
+        if self.city != new_city:
+            self.city.remove_resident(self)  
+            self.city = new_city  
+            new_city.add_resident(self) 
+            print(f"{self.name} переехал в {new_city.name}")
+        else:
+            print(f"{self.name} уже проживает в {new_city.name}")
+
+
+city1 = City("City1", 100, 1000)
+city2 = City("City2", 150, 1500)
+city3 = City("City3", 200, 2000)
+city4 = City("City4", 50, 500)
+city5 = City("City5", 75, 750)
+
+county1 = County("County1", 50000, 50000, [city1, city2])
+county2 = County("County2", 60000, 60000, [city3, city4])
+county3 = County("County3", 70000, 70000, [city5])
+
+country1 = Country("Country1", 500000, 5000000, [county1, county2])
+country2 = Country("Country2", 600000, 6000000, [county3])
+
+person1 = Person("Person1", city1)
+person2 = Person("Person2", city2)
+
+person1.pay_taxes()  
+city1.request_funding(500, county1)  
+county1.request_government_support(1000, city1) 
+
+person1.move_to_city(city3)
